@@ -14,7 +14,12 @@
 
 <!-- Musica di sottofondo -->
 <audio id="bgMusic" loop>
-  <source src="Viva%20Forever.mp3" type="audio/mpeg">
+  <source src="Viva Forever.mp3" type="audio/mpeg">
+</audio>
+
+<!-- Suono salto -->
+<audio id="jumpSound">
+  <source src="jump.mp3" type="audio/mpeg">
 </audio>
 
 <script>
@@ -25,14 +30,17 @@ const ctx = canvas.getContext("2d");
 const music = document.getElementById("bgMusic");
 music.volume = 0.3;
 
-// Avvia al primo click (necessario per browser moderni)
+// Suono salto
+const jumpSound = document.getElementById("jumpSound");
+
+// Parte al primo click
 document.addEventListener("click", () => {
   music.play();
 }, { once: true });
 
 // Sprite guerriero
 const warriorImg = new Image();
-warriorImg.src = "warrior.jpg";  // immagine locale
+warriorImg.src = "https://i.ibb.co/s9v5wFmN/image-1003527139519194.jpg";
 
 // Posizioni
 let warriorX = 50;
@@ -41,7 +49,7 @@ let jump = false;
 let jumpHeight = 0;
 let speed = 2;
 
-// Ostacoli (rettangoli)
+// Ostacoli
 const obstacles = [
   {x: 400, y: 300, width: 50, height: 50},
   {x: 600, y: 300, width: 50, height: 50},
@@ -64,16 +72,17 @@ const messages = [
   "Continua a lottare!",
   "Non ti arrendere"
 ];
+
 let messageIndex = 0;
 let messageTimer = 0;
 
-// Controlli tastiera
+// Controllo tastiera
 document.addEventListener("keydown", (e) => {
   if(e.key === "ArrowRight") warriorX += speed;
   if(e.key === "ArrowLeft") warriorX -= speed;
-  if(e.key === " " && !jump){ // barra spaziatrice per salto
+  if(e.key === " " && !jump){ // barra spaziatrice per saltare
     jump = true;
-    // suono salto opzionale se vuoi aggiungerlo
+    jumpSound.play();
   }
 });
 
@@ -110,11 +119,12 @@ function draw() {
   // Guerriero
   ctx.drawImage(warriorImg, warriorX, warriorY - jumpHeight, 50, 50);
 
-  // Salto automatico se vicino ostacolo
+  // Salto automatico se vicino a ostacolo
   let nextObstacle = obstacles.find(o => warriorX + 50 < o.x);
   if(nextObstacle){
     if(warriorX + 50 >= nextObstacle.x){
       jump = true;
+      jumpSound.play();
     }
   }
 
@@ -131,7 +141,7 @@ function draw() {
   ctx.font = "24px Arial";
   ctx.fillText(messages[messageIndex], 200, 50);
 
-  // Cambio messaggio
+  // Cambio messaggio ogni 120 frame
   messageTimer++;
   if(messageTimer >= 120){
     messageIndex = (messageIndex + 1) % messages.length;
