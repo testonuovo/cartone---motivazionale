@@ -14,7 +14,7 @@
 
 <!-- Musica di sottofondo -->
 <audio id="bgMusic" loop>
-  <source src="Viva Forever.mp3" type="audio/mpeg">
+  <source src="Viva%20Forever.mp3" type="audio/mpeg">
 </audio>
 
 <!-- Suono salto -->
@@ -26,34 +26,43 @@
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
-// Musica
+// Musica e suono
 const music = document.getElementById("bgMusic");
 music.volume = 0.3;
-
-// Suono salto
 const jumpSound = document.getElementById("jumpSound");
 
-// Parte al primo click
-document.addEventListener("click", () => {
-  music.play();
-}, { once: true });
+document.addEventListener("click", () => { music.play(); }, { once: true });
 
-// Sprite guerriero
-const warriorImg = new Image();
-warriorImg.src = "https://i.ibb.co/s9v5wFmN/image-1003527139519194.jpg";
+// Guerriero (sprite animati)
+const warriorSprites = [
+  new Image(), new Image(), new Image()
+];
+warriorSprites[0].src = "warrior1.png";
+warriorSprites[1].src = "warrior2.png";
+warriorSprites[2].src = "warrior3.png";
 
-// Posizioni
+let frame = 0;
+let frameTimer = 0;
+
+// Posizione e movimento
 let warriorX = 50;
 let warriorY = 300;
 let jump = false;
 let jumpHeight = 0;
 let speed = 2;
 
-// Ostacoli
+// Ostacoli (immagini)
+const obstacleImages = [
+  new Image(), new Image(), new Image()
+];
+obstacleImages[0].src = "obstacle1.png";
+obstacleImages[1].src = "obstacle2.png";
+obstacleImages[2].src = "obstacle3.png";
+
 const obstacles = [
-  {x: 400, y: 300, width: 50, height: 50},
-  {x: 600, y: 300, width: 50, height: 50},
-  {x: 750, y: 300, width: 50, height: 50}
+  {x: 400, y: 300, width: 50, height: 50, img: obstacleImages[0]},
+  {x: 600, y: 300, width: 50, height: 50, img: obstacleImages[1]},
+  {x: 750, y: 300, width: 50, height: 50, img: obstacleImages[2]}
 ];
 
 // Nuvole
@@ -72,38 +81,38 @@ const messages = [
   "Continua a lottare!",
   "Non ti arrendere"
 ];
-
 let messageIndex = 0;
 let messageTimer = 0;
+
+// Caricamento immagini
+let imagesLoaded = 0;
+function imageLoaded() { imagesLoaded++; if(imagesLoaded === warriorSprites.length + obstacleImages.length){ draw(); } }
+warriorSprites.forEach(img => img.onload = imageLoaded);
+obstacleImages.forEach(img => img.onload = imageLoaded);
 
 // Controllo tastiera
 document.addEventListener("keydown", (e) => {
   if(e.key === "ArrowRight") warriorX += speed;
   if(e.key === "ArrowLeft") warriorX -= speed;
-  if(e.key === " " && !jump){ // barra spaziatrice per saltare
+  if(e.key === " " && !jump){
     jump = true;
     jumpSound.play();
   }
 });
 
-// Avvio animazione
-warriorImg.onload = () => {
-  draw();
-};
-
 function draw() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.clearRect(0,0,canvas.width,canvas.height);
 
   // Sfondo cielo
   ctx.fillStyle = "#87ceeb";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillRect(0,0,canvas.width,canvas.height);
 
-  // Nuvole animate
+  // Nuvole
   ctx.fillStyle = "white";
   clouds.forEach(cloud => {
     ctx.fillRect(cloud.x, cloud.y, cloud.width, cloud.height);
     cloud.x -= 0.5;
-    if (cloud.x + cloud.width < 0) cloud.x = canvas.width;
+    if(cloud.x + cloud.width < 0) cloud.x = canvas.width;
   });
 
   // Terra
@@ -111,42 +120,29 @@ function draw() {
   ctx.fillRect(0, 350, canvas.width, 50);
 
   // Ostacoli
-  ctx.fillStyle = "red";
-  obstacles.forEach(obs => {
-    ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
-  });
+  obstacles.forEach(obs => { ctx.drawImage(obs.img, obs.x, obs.y, obs.width, obs.height); });
 
-  // Guerriero
-  ctx.drawImage(warriorImg, warriorX, warriorY - jumpHeight, 50, 50);
+  // Guerriero animato
+  ctx.drawImage(warriorSprites[frame], warriorX, warriorY - jumpHeight, 50, 50);
+  frameTimer++;
+  if(frameTimer >= 10){ frame = (frame + 1) % warriorSprites.length; frameTimer = 0; }
 
-  // Salto automatico se vicino a ostacolo
+  // Salto automatico se vicino ostacolo
   let nextObstacle = obstacles.find(o => warriorX + 50 < o.x);
-  if(nextObstacle){
-    if(warriorX + 50 >= nextObstacle.x){
-      jump = true;
-      jumpSound.play();
-    }
-  }
+  if(nextObstacle && warriorX + 50 >= nextObstacle.x){ jump = true; jumpSound.play(); }
 
   // Salto
-  if(jump){
-    if(jumpHeight < 100) jumpHeight += 5;
-    else jump = false;
-  } else if(jumpHeight > 0){
-    jumpHeight -= 5;
-  }
+  if(jump){ if(jumpHeight < 100) jumpHeight += 5; else jump = false; }
+  else if(jumpHeight > 0) jumpHeight -= 5;
 
   // Testo motivazionale
   ctx.fillStyle = "white";
   ctx.font = "24px Arial";
   ctx.fillText(messages[messageIndex], 200, 50);
 
-  // Cambio messaggio ogni 120 frame
+  // Cambio messaggio
   messageTimer++;
-  if(messageTimer >= 120){
-    messageIndex = (messageIndex + 1) % messages.length;
-    messageTimer = 0;
-  }
+  if(messageTimer >= 120){ messageIndex = (messageIndex + 1) % messages.length; messageTimer = 0; }
 
   requestAnimationFrame(draw);
 }
